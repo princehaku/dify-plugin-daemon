@@ -9,7 +9,7 @@ COPY . /app
 WORKDIR /app
 
 # using goproxy if you have network issues
-# ENV GOPROXY=https://goproxy.cn,direct
+ENV GOPROXY=https://goproxy.cn,direct
 
 # build
 RUN go build \
@@ -36,7 +36,8 @@ ARG PLATFORM=local
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y python3.12 python3.12-venv python3.12-dev ffmpeg \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
-    && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1;
+    && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1; \
+    && pip install pysocks
 
 ENV PLATFORM=$PLATFORM
 ENV GIN_MODE=release
