@@ -34,12 +34,12 @@ ARG PLATFORM=local
 
 # Install python3.12 if PLATFORM is local
 RUN apt-get update &&  \
-    apt-get install -y python3.12 python3.12-venv python3.12 python3.12-dev ffmpeg \
+    apt-get install -y python3.12 python3.12-venv python3.12 python3.12-dev ffmpeg pip \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1;
 
-RUN python3 -m pip install pysocks -i https://mirrors.aliyun.com/pypi/simple/
+RUN pip install pysocks --break-system-packages -i https://mirrors.aliyun.com/pypi/simple/
 
 ENV PLATFORM=$PLATFORM
 ENV GIN_MODE=release
