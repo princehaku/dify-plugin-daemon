@@ -5,8 +5,6 @@ ARG VERSION=unknown
 # copy project
 COPY . /app
 
-COPY docker/ubuntu.sources /etc/apt/sources.list.d/ubuntu.sources
-
 # set working directory
 WORKDIR /app
 
@@ -31,15 +29,17 @@ COPY --from=builder /app/entrypoint.sh /app/entrypoint.sh
 
 WORKDIR /app
 
+COPY docker/ubuntu.sources /etc/apt/sources.list.d/ubuntu.sources
+
 # check build args
 ARG PLATFORM=local
 
 # Install python3.12 if PLATFORM is local
-RUN apt-get update &&  \
-    apt-get install -y python3.12 python3.12-venv python3.12 python3.12-dev ffmpeg pip \
+RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y python3.12 python3.12-venv python3.12-dev ffmpeg pip \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1;
+
 
 RUN pip install pysocks --break-system-packages -i https://mirrors.aliyun.com/pypi/simple/
 
