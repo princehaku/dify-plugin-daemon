@@ -14,7 +14,7 @@ func (config *Config) SetDefault() {
 	setDefaultInt(&config.MaxPluginPackageSize, 52428800)
 	setDefaultInt(&config.MaxBundlePackageSize, 52428800*12)
 	setDefaultInt(&config.MaxServerlessTransactionTimeout, 300)
-	setDefaultInt(&config.PluginMaxExecutionTimeout, 240)
+	setDefaultInt(&config.PluginMaxExecutionTimeout, 10*60)
 	setDefaultString(&config.PluginStorageType, "local")
 	setDefaultInt(&config.PluginMediaCacheSize, 1024)
 	setDefaultInt(&config.PluginRemoteInstallingMaxSingleTenantConn, 5)
@@ -31,6 +31,9 @@ func (config *Config) SetDefault() {
 	setDefaultString(&config.PythonInterpreterPath, "/usr/bin/python3")
 	setDefaultInt(&config.PythonEnvInitTimeout, 120)
 	setDefaultBoolPtr(&config.ForceVerifyingSignature, true)
+	setDefaultBoolPtr(&config.PipPreferBinary, true)
+	setDefaultBoolPtr(&config.PipVerbose, true)
+	setDefaultString(&config.DBDefaultDatabase, "postgres")
 }
 
 func setDefaultInt[T constraints.Integer](value *T, defaultValue T) {
