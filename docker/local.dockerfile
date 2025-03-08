@@ -5,6 +5,8 @@ ARG VERSION=unknown
 # copy project
 COPY . /app
 
+COPY docker/ubuntu.sources /etc/apt/sources.list.d/ubuntu.sources
+
 # set working directory
 WORKDIR /app
 
@@ -31,8 +33,6 @@ WORKDIR /app
 
 # check build args
 ARG PLATFORM=local
-
-RUN echo "deb https://mirrors.aliyun.com/ubuntu/ noble main restricted universe multiverse\ndeb-src https://mirrors.aliyun.com/ubuntu/ noble main restricted universe multiverse\ndeb https://mirrors.aliyun.com/ubuntu/ noble-security main restricted universe multiverse\ndeb-src https://mirrors.aliyun.com/ubuntu/ noble-security main restricted universe multiverse\ndeb https://mirrors.aliyun.com/ubuntu/ noble-updates main restricted universe multiverse\ndeb-src https://mirrors.aliyun.com/ubuntu/ noble-updates main restricted universe multiverse\ndeb https://mirrors.aliyun.com/ubuntu/ noble-backports main restricted universe multiverse\ndeb-src https://mirrors.aliyun.com/ubuntu/ noble-backports main restricted universe multiverse" > /etc/apt/sources.list && apt update
 
 # Install python3.12 if PLATFORM is local
 RUN apt-get update &&  \
