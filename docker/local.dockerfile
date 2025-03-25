@@ -48,7 +48,7 @@ ENV TIKTOKEN_CACHE_DIR=/app/.tiktoken
 
 # Install dify_plugin to speedup the environment setup, test uv and preload tiktoken
 RUN mv /usr/lib/python3.12/EXTERNALLY-MANAGED /usr/lib/python3.12/EXTERNALLY-MANAGED.bk \
-    && python3 -m pip install uv pysocks \
+    && python3 -m pip install uv \
     && uv pip install --system dify_plugin \
     && python3 -c "from uv._find_uv import find_uv_bin;print(find_uv_bin());" \
     && python3 -c "import tiktoken; tiktoken.get_encoding('gpt2').special_tokens_set; tiktoken.get_encoding('cl100k_base').special_tokens_set"
