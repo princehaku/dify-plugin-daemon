@@ -20,7 +20,7 @@ type S3Storage struct {
 	client *s3.Client
 }
 
-func NewS3Storage(useAws bool, endpoint string, ak string, sk string, bucket string, region string) (oss.OSS, error) {
+func NewS3Storage(useAws bool, endpoint string, usePathStyle bool, ak string, sk string, bucket string, region string) (oss.OSS, error) {
 	var cfg aws.Config
 	var err error
 	var client *s3.Client
@@ -47,12 +47,14 @@ func NewS3Storage(useAws bool, endpoint string, ak string, sk string, bucket str
 		}
 
 		client = s3.NewFromConfig(cfg, func(options *s3.Options) {
-			options.BaseEndpoint = aws.String(endpoint)
+			if endpoint != "" {
+				options.BaseEndpoint = aws.String(endpoint)
+			}
 		})
 	} else {
 		client = s3.New(s3.Options{
 			Credentials:  credentials.NewStaticCredentialsProvider(ak, sk, ""),
-			UsePathStyle: true,
+			UsePathStyle: usePathStyle,
 			Region:       region,
 			EndpointResolver: s3.EndpointResolverFunc(
 				func(region string, options s3.EndpointResolverOptions) (aws.Endpoint, error) {
@@ -175,4 +177,8 @@ func (s *S3Storage) State(key string) (oss.OSSState, error) {
 		Size:         *resp.ContentLength,
 		LastModified: *resp.LastModified,
 	}, nil
+}
+
+func (s *S3Storage) Type() string {
+	return oss.OSS_TYPE_S3
 }

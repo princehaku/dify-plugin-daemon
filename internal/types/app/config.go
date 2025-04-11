@@ -17,6 +17,7 @@ type Config struct {
 
 	S3UseAwsManagedIam bool   `envconfig:"S3_USE_AWS_MANAGED_IAM" default:"true"`
 	S3Endpoint         string `envconfig:"S3_ENDPOINT"`
+	S3UsePathStyle     bool   `envconfig:"S3_USE_PATH_STYLE" default:"true"`
 	AWSAccessKey       string `envconfig:"AWS_ACCESS_KEY"`
 	AWSSecretKey       string `envconfig:"AWS_SECRET_KEY"`
 	AWSRegion          string `envconfig:"AWS_REGION"`
@@ -25,7 +26,10 @@ type Config struct {
 	TencentCOSSecretId  string `envconfig:"TENCENT_COS_SECRET_ID"`
 	TencentCOSRegion    string `envconfig:"TENCENT_COS_REGION"`
 
-	PluginStorageType      string `envconfig:"PLUGIN_STORAGE_TYPE" validate:"required,oneof=local aws_s3 tencent_cos"`
+	AzureBlobStorageContainerName    string `envconfig:"AZURE_BLOB_STORAGE_CONTAINER_NAME"`
+	AzureBlobStorageConnectionString string `envconfig:"AZURE_BLOB_STORAGE_CONNECTION_STRING"`
+
+	PluginStorageType      string `envconfig:"PLUGIN_STORAGE_TYPE" validate:"required,oneof=local aws_s3 tencent_cos azure_blob"`
 	PluginStorageOSSBucket string `envconfig:"PLUGIN_STORAGE_OSS_BUCKET"`
 	PluginStorageLocalRoot string `envconfig:"PLUGIN_STORAGE_LOCAL_ROOT"`
 
@@ -64,8 +68,10 @@ type Config struct {
 	RedisPort   uint16 `envconfig:"REDIS_PORT" validate:"required"`
 	RedisPass   string `envconfig:"REDIS_PASSWORD"`
 	RedisUseSsl bool   `envconfig:"REDIS_USE_SSL"`
+	RedisDB     int    `envconfig:"REDIS_DB"`
 
 	// database
+	DBType            string `envconfig:"DB_TYPE" default:"postgresql"`
 	DBUsername        string `envconfig:"DB_USERNAME" validate:"required"`
 	DBPassword        string `envconfig:"DB_PASSWORD" validate:"required"`
 	DBHost            string `envconfig:"DB_HOST" validate:"required"`
@@ -81,6 +87,11 @@ type Config struct {
 	// force verifying signature for all plugins, not allowing install plugin not signed
 	ForceVerifyingSignature *bool `envconfig:"FORCE_VERIFYING_SIGNATURE"`
 
+	// enable or disable third-party signature verification for plugins
+	ThirdPartySignatureVerificationEnabled bool `envconfig:"THIRD_PARTY_SIGNATURE_VERIFICATION_ENABLED"  default:"false"`
+	// a comma-separated list of file paths to public keys in addition to the official public key for signature verification
+	ThirdPartySignatureVerificationPublicKeys []string `envconfig:"THIRD_PARTY_SIGNATURE_VERIFICATION_PUBLIC_KEYS"  default:""`
+
 	// lifetime state management
 	LifetimeCollectionHeartbeatInterval int `envconfig:"LIFETIME_COLLECTION_HEARTBEAT_INTERVAL"  validate:"required"`
 	LifetimeCollectionGCInterval        int `envconfig:"LIFETIME_COLLECTION_GC_INTERVAL" validate:"required"`
@@ -95,13 +106,13 @@ type Config struct {
 	MaxBundlePackageSize            int64 `envconfig:"MAX_BUNDLE_PACKAGE_SIZE" validate:"required"`
 	MaxServerlessTransactionTimeout int   `envconfig:"MAX_SERVERLESS_TRANSACTION_TIMEOUT"`
 
-	PythonInterpreterPath      string `envconfig:"PYTHON_INTERPRETER_PATH"`
-	PythonEnvInitTimeout  	   int    `envconfig:"PYTHON_ENV_INIT_TIMEOUT" validate:"required"`
-	PythonCompileAllExtraArgs  string `envconfig:"PYTHON_COMPILE_ALL_EXTRA_ARGS"`
-	PipMirrorUrl               string `envconfig:"PIP_MIRROR_URL"`
-	PipPreferBinary            *bool  `envconfig:"PIP_PREFER_BINARY"`
-	PipVerbose                 *bool  `envconfig:"PIP_VERBOSE"`
-	PipExtraArgs               string `envconfig:"PIP_EXTRA_ARGS"`
+	PythonInterpreterPath     string `envconfig:"PYTHON_INTERPRETER_PATH"`
+	PythonEnvInitTimeout      int    `envconfig:"PYTHON_ENV_INIT_TIMEOUT" validate:"required"`
+	PythonCompileAllExtraArgs string `envconfig:"PYTHON_COMPILE_ALL_EXTRA_ARGS"`
+	PipMirrorUrl              string `envconfig:"PIP_MIRROR_URL"`
+	PipPreferBinary           *bool  `envconfig:"PIP_PREFER_BINARY"`
+	PipVerbose                *bool  `envconfig:"PIP_VERBOSE"`
+	PipExtraArgs              string `envconfig:"PIP_EXTRA_ARGS"`
 
 	DisplayClusterLog bool `envconfig:"DISPLAY_CLUSTER_LOG"`
 
@@ -175,6 +186,16 @@ func (c *Config) Validate() error {
 
 		if c.AWSRegion == "" {
 			return fmt.Errorf("aws region is empty")
+		}
+	}
+
+	if c.PluginStorageType == "azure_blob" {
+		if c.AzureBlobStorageConnectionString == "" {
+			return fmt.Errorf("azure blob storage connection string is empty")
+		}
+
+		if c.AzureBlobStorageContainerName == "" {
+			return fmt.Errorf("azure blob storage container name is empty")
 		}
 	}
 
