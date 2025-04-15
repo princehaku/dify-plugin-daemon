@@ -12,7 +12,7 @@ concurrency:
 env:
   DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USER }}
   DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-  DIFY_PLUGIN_IMAGE_NAME: ${{ vars.DIFY_WEB_IMAGE_NAME || 'registry.cn-hangzhou.aliyuncs.com/haku-images/dify-web' }}
+  DIFY_PLUGIN_IMAGE_NAME: ${{ vars.DIFY_WEB_IMAGE_NAME || 'registry.cn-hangzhou.aliyuncs.com/haku-images/dify-plugin-daemon' }}
   ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY || 'registry.cn-hangzhou.aliyuncs.com'}}
   ALIYUN_REGISTRY_USER: ${{ secrets.ALIYUN_REGISTRY_USER }}
   ALIYUN_REGISTRY_PASSWORD: ${{ secrets.ALIYUN_REGISTRY_PASSWORD }}
