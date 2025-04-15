@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  DOCKER_FILE_NAME: 'local.dockerfile'
+  DOCKER_FILE_NAME: 'docker/local.dockerfile'
   DIFY_PLUGIN_IMAGE_NAME: ${{ vars.DIFY_WEB_IMAGE_NAME || 'registry.cn-hangzhou.aliyuncs.com/haku-images/dify-plugin-daemon' }}
   ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY || 'registry.cn-hangzhou.aliyuncs.com'}}
   ALIYUN_REGISTRY_USER: ${{ secrets.ALIYUN_REGISTRY_USER }}
@@ -24,7 +24,7 @@ jobs:
         include:
           - service_name: "build-plugin-amd64"
             image_name_env: "DIFY_PLUGIN_IMAGE_NAME"
-            context: "docker"
+            context: "."
             platform: linux/amd64,linux/arm64
 
     steps:
