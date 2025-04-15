@@ -10,7 +10,7 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  DOCKER_FILE: ''
+  DOCKER_FILE_NAME: '"local.dockerfile"'
   DIFY_PLUGIN_IMAGE_NAME: ${{ vars.DIFY_WEB_IMAGE_NAME || 'registry.cn-hangzhou.aliyuncs.com/haku-images/dify-plugin-daemon' }}
   ALIYUN_REGISTRY: ${{ secrets.ALIYUN_REGISTRY || 'registry.cn-hangzhou.aliyuncs.com'}}
   ALIYUN_REGISTRY_USER: ${{ secrets.ALIYUN_REGISTRY_USER }}
@@ -55,7 +55,7 @@ jobs:
         with:
           context: "{{defaultContext}}:${{ matrix.context }}"
           platforms: ${{ matrix.platform }}
-          file: "docker/local.dockerfile"
+          file: ${{env[DOCKER_FILE_NAME]}}
           build-args: COMMIT_SHA=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.revision'] }}
           labels: ${{ steps.meta.outputs.labels }}
           outputs: type=image,name=${{ env[matrix.image_name_env] }},push-by-digest=true,name-canonical=true,push=true
