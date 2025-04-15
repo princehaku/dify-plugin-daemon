@@ -74,13 +74,13 @@ jobs:
         run:
           for tag in $(echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n');
           do
-            docker tag dify-plugin-daemon "$tag-${{ matrix.scope }}-${{ env.PLATFORM_PAIR }}";
+          docker tag dify-plugin-daemon "$tag-${{ matrix.scope }}-${{ env.PLATFORM_PAIR }}";
           done
       - name: Push Docker Image
         run:
           for tag in $(echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n');
           do
-            docker push $tag-${{ matrix.scope }}-${{ env.PLATFORM_PAIR }};
+          docker push $tag-${{ matrix.scope }}-${{ env.PLATFORM_PAIR }};
           done
 
   create-manifest:
@@ -114,6 +114,6 @@ jobs:
         run:
           for tag in $(echo "${{ steps.meta.outputs.tags }}" | tr ',' '\n');
           do
-            docker manifest create $tag-${{ matrix.scope }} $tag-${{ matrix.scope }}-linux-amd64 $tag-${{ matrix.scope }}-linux-arm64;
-            docker manifest push $tag-${{ matrix.scope }};
+          docker manifest create $tag-${{ matrix.scope }} $tag-${{ matrix.scope }}-linux-amd64 $tag-${{ matrix.scope }}-linux-arm64;
+          docker manifest push $tag-${{ matrix.scope }};
           done
