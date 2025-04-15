@@ -75,6 +75,9 @@ type PluginManager struct {
 	// pip extra args
 	pipExtraArgs string
 
+	// python compileall extra args
+	pythonCompileAllExtraArgs string
+
 	// remote plugin server
 	remotePluginServer debugging_runtime.RemotePluginServerInterface
 
@@ -107,17 +110,18 @@ func InitGlobalManager(oss oss.OSS, configuration *app.Config) *PluginManager {
 			oss,
 			configuration.PluginInstalledPath,
 		),
-		localPluginLaunchingLock: lock.NewGranularityLock(),
-		maxLaunchingLock:         make(chan bool, 2), // by default, we allow 2 plugins launching at the same time
-		pythonInterpreterPath:    configuration.PythonInterpreterPath,
-		pythonEnvInitTimeout:     configuration.PythonEnvInitTimeout,
-		platform:                 configuration.Platform,
-		HttpProxy:                configuration.HttpProxy,
-		HttpsProxy:               configuration.HttpsProxy,
-		pipMirrorUrl:             configuration.PipMirrorUrl,
-		pipPreferBinary:          *configuration.PipPreferBinary,
-		pipVerbose:               *configuration.PipVerbose,
-		pipExtraArgs:             configuration.PipExtraArgs,
+		localPluginLaunchingLock:  lock.NewGranularityLock(),
+		maxLaunchingLock:          make(chan bool, 2), // by default, we allow 2 plugins launching at the same time
+		pythonInterpreterPath:     configuration.PythonInterpreterPath,
+		pythonEnvInitTimeout:      configuration.PythonEnvInitTimeout,
+		pythonCompileAllExtraArgs: configuration.PythonCompileAllExtraArgs,
+		platform:                  configuration.Platform,
+		HttpProxy:                 configuration.HttpProxy,
+		HttpsProxy:                configuration.HttpsProxy,
+		pipMirrorUrl:              configuration.PipMirrorUrl,
+		pipPreferBinary:           *configuration.PipPreferBinary,
+		pipVerbose:                *configuration.PipVerbose,
+		pipExtraArgs:              configuration.PipExtraArgs,
 	}
 
 	return manager
@@ -159,6 +163,7 @@ func (p *PluginManager) Launch(configuration *app.Config) {
 		fmt.Sprintf("%s:%d", configuration.RedisHost, configuration.RedisPort),
 		configuration.RedisPass,
 		configuration.RedisUseSsl,
+		configuration.RedisDB,
 	); err != nil {
 		log.Panic("init redis client failed: %s", err.Error())
 	}
@@ -189,11 +194,11 @@ func (p *PluginManager) BackwardsInvocation() dify_invocation.BackwardsInvocatio
 	return p.backwardsInvocation
 }
 
-func (p *PluginManager) SavePackage(plugin_unique_identifier plugin_entities.PluginUniqueIdentifier, pkg []byte) (
+func (p *PluginManager) SavePackage(plugin_unique_identifier plugin_entities.PluginUniqueIdentifier, pkg []byte, thirdPartySignatureVerificationConfig *decoder.ThirdPartySignatureVerificationConfig) (
 	*plugin_entities.PluginDeclaration, error,
 ) {
 	// try to decode the package
-	packageDecoder, err := decoder.NewZipPluginDecoder(pkg)
+	packageDecoder, err := decoder.NewZipPluginDecoderWithThirdPartySignatureVerificationConfig(pkg, thirdPartySignatureVerificationConfig)
 	if err != nil {
 		return nil, err
 	}

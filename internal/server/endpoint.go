@@ -2,6 +2,8 @@ package server
 
 import (
 	"errors"
+	"github.com/langgenius/dify-plugin-daemon/internal/utils/cache"
+	"strings"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -11,6 +13,7 @@ import (
 	"github.com/langgenius/dify-plugin-daemon/internal/types/exception"
 	"github.com/langgenius/dify-plugin-daemon/internal/types/models"
 	"github.com/langgenius/dify-plugin-daemon/internal/utils/log"
+	"github.com/langgenius/dify-plugin-daemon/pkg/entities/endpoint_entities"
 	"github.com/langgenius/dify-plugin-daemon/pkg/entities/plugin_entities"
 )
 
@@ -26,6 +29,11 @@ func (app *App) Endpoint(config *app.Config) func(c *gin.Context) {
 		hookId := c.Param("hook_id")
 		path := c.Param("path")
 
+		// set X-Original-Host
+		if c.Request.Header.Get(endpoint_entities.HeaderXOriginalHost) == "" {
+			c.Request.Header.Set(endpoint_entities.HeaderXOriginalHost, c.Request.Host)
+		}
+
 		if app.endpointHandler != nil {
 			app.endpointHandler(c, hookId, time.Duration(config.PluginMaxExecutionTimeout)*time.Second, path)
 		} else {
@@ -35,9 +43,21 @@ func (app *App) Endpoint(config *app.Config) func(c *gin.Context) {
 }
 
 func (app *App) EndpointHandler(ctx *gin.Context, hookId string, maxExecutionTime time.Duration, path string) {
-	endpoint, err := db.GetOne[models.Endpoint](
-		db.Equal("hook_id", hookId),
+	endpointCacheKey := strings.Join(
+		[]string{
+			"hook_id",
+			hookId,
+		},
+		":",
 	)
+	endpoint, err := cache.AutoGetWithGetter[models.Endpoint](
+		endpointCacheKey,
+		func() (*models.Endpoint, error) {
+			v, err := db.GetOne[models.Endpoint](
+				db.Equal("hook_id", hookId),
+			)
+			return &v, err
+		})
 	if err == db.ErrDatabaseNotFound {
 		ctx.JSON(404, exception.BadRequestError(errors.New("endpoint not found")).ToResponse())
 		return
@@ -50,9 +70,24 @@ func (app *App) EndpointHandler(ctx *gin.Context, hookId string, maxExecutionTim
 	}
 
 	// get plugin installation
-	pluginInstallation, err := db.GetOne[models.PluginInstallation](
-		db.Equal("plugin_id", endpoint.PluginID),
-		db.Equal("tenant_id", endpoint.TenantID),
+	pluginInstallationCacheKey := strings.Join(
+		[]string{
+			"plugin_id",
+			endpoint.PluginID,
+			"tenant_id",
+			endpoint.TenantID,
+		},
+		":",
+	)
+	pluginInstallation, err := cache.AutoGetWithGetter[models.PluginInstallation](
+		pluginInstallationCacheKey,
+		func() (*models.PluginInstallation, error) {
+			v, err := db.GetOne[models.PluginInstallation](
+				db.Equal("plugin_id", endpoint.PluginID),
+				db.Equal("tenant_id", endpoint.TenantID),
+			)
+			return &v, err
+		},
 	)
 	if err != nil {
 		ctx.JSON(404, exception.BadRequestError(errors.New("plugin installation not found")).ToResponse())
@@ -73,6 +108,6 @@ func (app *App) EndpointHandler(ctx *gin.Context, hookId string, maxExecutionTim
 	if ok, originalError := app.cluster.IsPluginOnCurrentNode(pluginUniqueIdentifier); !ok {
 		app.redirectPluginInvokeByPluginIdentifier(ctx, pluginUniqueIdentifier, originalError)
 	} else {
-		service.Endpoint(ctx, &endpoint, &pluginInstallation, maxExecutionTime, path)
+		service.Endpoint(ctx, endpoint, pluginInstallation, maxExecutionTime, path)
 	}
 }
