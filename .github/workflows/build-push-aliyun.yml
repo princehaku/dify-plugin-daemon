@@ -86,7 +86,7 @@ jobs:
         include:
           - service_name: "merge-plugin-images"
             image_name_env: "DIFY_PLUGIN_IMAGE_NAME"
-            context: "docker"
+            context: "."
     steps:
       - name: Download digests
         uses: actions/download-artifact@v4
