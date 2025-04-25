@@ -2,7 +2,7 @@ release/
 logs/
 .vscode/
 .idea/
-.env
+docker/.env
 cmd/**/__debug_bin*
 *.zip
 .DS_Store

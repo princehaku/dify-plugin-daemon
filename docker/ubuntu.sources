@@ -1,0 +1,13 @@
+Types: deb
+URIs: http://mirrors.aliyun.com/ubuntu/
+Suites: noble noble-updates noble-security noble-backports
+Components: main restricted universe multiverse
+Architectures: amd64
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
+
+Types: deb
+URIs: http://mirrors.aliyun.com/ubuntu-ports/
+Suites: noble noble-updates noble-security noble-backports
+Components: main restricted universe multiverse
+Architectures: arm64 armhf
+Signed-By: /usr/share/keyrings/ubuntu-archive-keyring.gpg
