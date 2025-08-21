@@ -1,0 +1,177 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="plugin_local.dockerfile" type="docker-deploy" factoryName="dockerfile" server-name="Docker">
+    <deployment type="dockerfile">
+      <settings>
+        <option name="imageTag" value="docker/local.dockerfile" />
+        <option name="containerName" value="plugin_local.dockerfile" />
+        <option name="contextFolderPath" value="." />
+        <option name="envVars">
+          <list>
+            <DockerEnvVarImpl>
+              <option name="name" value="# proxy settings, example: HTTP_PROXY" />
+              <option name="value" value="http://host.docker.internal:7890" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="# PYTHON_INTERPRETER_PATH" />
+              <option name="value" value="/usr/bin/python3" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="AWS_ACCESS_KEY" />
+              <option name="value" value="" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="AWS_REGION" />
+              <option name="value" value="" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="AWS_SECRET_KEY" />
+              <option name="value" value="" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="DB_DATABASE" />
+              <option name="value" value="dify_plugin" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="DB_HOST" />
+              <option name="value" value="localhost" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="DB_PASSWORD" />
+              <option name="value" value="difyai123456" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="DB_PORT" />
+              <option name="value" value="5432" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="DB_USERNAME" />
+              <option name="value" value="postgres" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="DIFY_INNER_API_KEY" />
+              <option name="value" value="&quot;QaHbTe77CtuXmsfyhR7+vRjI/+XbV1AaFy691iy+kGDv2Jvy0/eAh8Y1&quot;" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="DIFY_INNER_API_URL" />
+              <option name="value" value="http://api:5001" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="DIFY_INVOCATION_CONNECTION_IDLE_TIMEOUT" />
+              <option name="value" value="120" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="DIFY_PLUGIN_SERVERLESS_CONNECTOR_API_KEY" />
+              <option name="value" value="HeRFb6yrzAy5vUSlJWK2lUl36mpkaRycv4witbQpucXacgXg7G9a8gVL" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="DIFY_PLUGIN_SERVERLESS_CONNECTOR_URL" />
+              <option name="value" value="http://127.0.0.1:5004" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="FORCE_VERIFYING_SIGNATURE" />
+              <option name="value" value="true" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="GIN_MODE" />
+              <option name="value" value="release" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="HTTP_PROXY" />
+              <option name="value" value="" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="HTTPS_PROXY" />
+              <option name="value" value="" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="MAX_PLUGIN_PACKAGE_SIZE" />
+              <option name="value" value="52428800" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="PERSISTENCE_STORAGE_MAX_SIZE" />
+              <option name="value" value="104857600" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="PERSISTENCE_STORAGE_PATH" />
+              <option name="value" value="persistence" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="PLATFORM" />
+              <option name="value" value="local" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="PLUGIN_INSTALLED_PATH" />
+              <option name="value" value="plugin" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="PLUGIN_REMOTE_INSTALLING_ENABLED" />
+              <option name="value" value="true" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="PLUGIN_REMOTE_INSTALLING_HOST" />
+              <option name="value" value="127.0.0.1" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="PLUGIN_REMOTE_INSTALLING_PORT" />
+              <option name="value" value="5003" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="PLUGIN_STORAGE_LOCAL_ROOT" />
+              <option name="value" value="./storage" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="PLUGIN_STORAGE_OSS_BUCKET" />
+              <option name="value" value="" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="PLUGIN_STORAGE_TYPE" />
+              <option name="value" value="local" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="PLUGIN_WEBHOOK_ENABLED" />
+              <option name="value" value="true" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="PLUGIN_WORKING_PATH" />
+              <option name="value" value="cwd" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="PPROF_ENABLED" />
+              <option name="value" value="false" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="PYTHON_ENV_INIT_TIMEOUT" />
+              <option name="value" value="600" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="REDIS_HOST" />
+              <option name="value" value="127.0.0.1" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="REDIS_PASSWORD" />
+              <option name="value" value="difyai123456" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="REDIS_PORT" />
+              <option name="value" value="6379" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="ROUTINE_POOL_SIZE" />
+              <option name="value" value="1024" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="SERVER_KEY" />
+              <option name="value" value="lYkiYYT6owG+71oLerGzA7GXCgOT++6ovaezWAjpCjf+Sjc3ZtU+qUEi" />
+            </DockerEnvVarImpl>
+            <DockerEnvVarImpl>
+              <option name="name" value="SERVER_PORT" />
+              <option name="value" value="5002" />
+            </DockerEnvVarImpl>
+          </list>
+        </option>
+        <option name="sourceFilePath" value="docker/local.dockerfile" />
+      </settings>
+    </deployment>
+    <method v="2" />
+  </configuration>
+</component>
