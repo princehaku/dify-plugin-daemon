@@ -21,7 +21,13 @@ import (
 )
 
 //go:embed patches/0.0.1b70.ai_model.py.patch
-var pythonPatches []byte
+var python001b70aiModelsPatches []byte
+
+//go:embed patches/0.1.1.llm.py.patch
+var python011llmPatches []byte
+
+//go:embed patches/0.1.1.request_reader.py.patch
+var python011requestReaderPatches []byte
 
 func (p *LocalPluginRuntime) InitPythonEnvironment() error {
 	// check if virtual environment exists
@@ -51,17 +57,21 @@ func (p *LocalPluginRuntime) InitPythonEnvironment() error {
 	// execute init command, create a virtual environment
 	success := false
 
-	// using `from uv._find_uv import find_uv_bin; print(find_uv_bin())` to find uv path
-	cmd := exec.Command(p.defaultPythonInterpreterPath, "-c", "from uv._find_uv import find_uv_bin; print(find_uv_bin())")
-	cmd.Dir = p.State.WorkingPath
-	output, err := cmd.Output()
-	if err != nil {
-		return fmt.Errorf("failed to find uv path: %s", err)
+	var uvPath string
+	if p.uvPath != "" {
+		uvPath = p.uvPath
+	} else {
+		// using `from uv._find_uv import find_uv_bin; print(find_uv_bin())` to find uv path
+		cmd := exec.Command(p.defaultPythonInterpreterPath, "-c", "from uv._find_uv import find_uv_bin; print(find_uv_bin())")
+		cmd.Dir = p.State.WorkingPath
+		output, err := cmd.Output()
+		if err != nil {
+			return fmt.Errorf("failed to find uv path: %s", err)
+		}
+		uvPath = strings.TrimSpace(string(output))
 	}
 
-	uvPath := strings.TrimSpace(string(output))
-
-	cmd = exec.Command(uvPath, "venv", ".venv")
+	cmd := exec.Command(uvPath, "venv", ".venv", "--python", "3.12")
 	cmd.Dir = p.State.WorkingPath
 	b := bytes.NewBuffer(nil)
 	cmd.Stdout = b
@@ -123,6 +133,15 @@ func (p *LocalPluginRuntime) InitPythonEnvironment() error {
 	virtualEnvPath := path.Join(p.State.WorkingPath, ".venv")
 	cmd = exec.CommandContext(ctx, uvPath, args...)
 	cmd.Env = append(cmd.Env, "VIRTUAL_ENV="+virtualEnvPath, "PATH="+os.Getenv("PATH"))
+	if p.HttpProxy != "" {
+		cmd.Env = append(cmd.Env, fmt.Sprintf("HTTP_PROXY=%s", p.HttpProxy))
+	}
+	if p.HttpsProxy != "" {
+		cmd.Env = append(cmd.Env, fmt.Sprintf("HTTPS_PROXY=%s", p.HttpsProxy))
+	}
+	if p.NoProxy != "" {
+		cmd.Env = append(cmd.Env, fmt.Sprintf("NO_PROXY=%s", p.NoProxy))
+	}
 	cmd.Dir = p.State.WorkingPath
 
 	// get stdout and stderr
@@ -220,8 +239,14 @@ func (p *LocalPluginRuntime) InitPythonEnvironment() error {
 		return fmt.Errorf("failed to install dependencies: %s, output: %s", err, errMsg.String())
 	}
 
+	compileArgs := []string{"-m", "compileall"}
+	if p.pythonCompileAllExtraArgs != "" {
+		compileArgs = append(compileArgs, strings.Split(p.pythonCompileAllExtraArgs, " ")...)
+	}
+	compileArgs = append(compileArgs, ".")
+
 	// pre-compile the plugin to avoid costly compilation on first invocation
-	compileCmd := exec.CommandContext(ctx, pythonPath, "-m", "compileall", ".")
+	compileCmd := exec.CommandContext(ctx, pythonPath, compileArgs...)
 	compileCmd.Dir = p.State.WorkingPath
 
 	// get stdout and stderr
@@ -298,10 +323,14 @@ func (p *LocalPluginRuntime) InitPythonEnvironment() error {
 
 	compileWg.Wait()
 	if err := compileCmd.Wait(); err != nil {
-		return fmt.Errorf("failed to pre-compile the plugin: %s", compileErrMsg.String())
+		// skip the error if the plugin is not compiled
+		// ISSUE: for some weird reasons, plugins may reference to a broken sdk but it works well itself
+		// we need to skip it but log the messages
+		// https://github.com/langgenius/dify/issues/16292
+		log.Warn("failed to pre-compile the plugin: %s", compileErrMsg.String())
 	}
 
-	log.Info("pre-loading the plugin %s", p.Config.Identity())
+	log.Info("pre-loaded the plugin %s", p.Config.Identity())
 
 	// import dify_plugin to speedup the first launching
 	// ISSUE: it takes too long to setup all the deps, that's why we choose to preload it
@@ -352,30 +381,107 @@ func (p *LocalPluginRuntime) patchPluginSdk(requirementsPath string) error {
 
 		pluginSdkPath := path.Dir(strings.TrimSpace(string(output)))
 		patchPath := path.Join(pluginSdkPath, "interfaces/model/ai_model.py")
-		if _, err := os.Stat(patchPath); err != nil {
-			return fmt.Errorf("failed to find the patch file: %s", err)
-		}
 
 		// apply the patch
 		if _, err := os.Stat(patchPath); err != nil {
 			return fmt.Errorf("failed to find the patch file: %s", err)
 		}
 
-		if err := os.WriteFile(patchPath, pythonPatches, 0644); err != nil {
+		if err := os.WriteFile(patchPath, python001b70aiModelsPatches, 0644); err != nil {
 			return fmt.Errorf("failed to write the patch file: %s", err)
 		}
 	}
 
+	if pluginSdkVersionObj.LessThan(version.Must(version.NewVersion("0.1.1"))) {
+		// get dify-plugin path
+		command := exec.Command(p.pythonInterpreterPath, "-c", "import importlib.util;print(importlib.util.find_spec('dify_plugin').origin)")
+		command.Dir = p.State.WorkingPath
+		output, err := command.Output()
+		if err != nil {
+			return fmt.Errorf("failed to get the path of the plugin sdk: %s", err)
+		}
+
+		pluginSdkPath := path.Dir(strings.TrimSpace(string(output)))
+		patchPath := path.Join(pluginSdkPath, "entities/model/llm.py")
+
+		// apply the patch
+		if _, err := os.Stat(patchPath); err != nil {
+			return fmt.Errorf("failed to find the patch file: %s", err)
+		}
+
+		if err := os.WriteFile(patchPath, python011llmPatches, 0644); err != nil {
+			return fmt.Errorf("failed to write the patch file: %s", err)
+		}
+
+		patchPath = path.Join(pluginSdkPath, "core/server/stdio/request_reader.py")
+		if _, err := os.Stat(patchPath); err != nil {
+			return fmt.Errorf("failed to find the patch file: %s", err)
+		}
+
+		if err := os.WriteFile(patchPath, python011requestReaderPatches, 0644); err != nil {
+			return fmt.Errorf("failed to write the patch file: %s", err)
+		}
+	}
 	return nil
 }
 
 func (p *LocalPluginRuntime) getPluginSdkVersion(requirements string) (string, error) {
 	// using regex to find the version of the plugin sdk
+	// First try to match exact version or compatible version
 	re := regexp.MustCompile(`(?:dify[_-]plugin)(?:~=|==)([0-9.a-z]+)`)
 	matches := re.FindStringSubmatch(requirements)
-	if len(matches) < 2 {
-		return "", fmt.Errorf("failed to find the version of the plugin sdk")
+	if len(matches) >= 2 {
+		return matches[1], nil
 	}
 
-	return matches[1], nil
+	// Try to match version ranges with multiple constraints
+	// Extract all version constraints for dify-plugin
+	// Try to match version ranges with multiple constraints
+	// For example: dify-plugin>=0.1.0,<0.2.0
+	reAllConstraints := regexp.MustCompile(`(?:dify[_-]plugin)([><]=?|==)([0-9.a-z]+)(?:,([><]=?|==)([0-9.a-z]+))?`)
+	allMatches := reAllConstraints.FindAllStringSubmatch(requirements, -1)
+
+	if len(allMatches) > 0 {
+		// Always return the highest version among all constraints
+		var highestVersion *version.Version
+		var versionStr string
+
+		for _, match := range allMatches {
+			// Check for the second version constraint if it exists
+			if len(match) >= 5 {
+				currentVersionStr := match[4]
+				currentVersion, err := version.NewVersion(currentVersionStr)
+				if err != nil {
+					continue
+				}
+
+				if highestVersion == nil || currentVersion.GreaterThan(highestVersion) {
+					highestVersion = currentVersion
+					versionStr = currentVersionStr
+				}
+			} else if len(match) >= 3 {
+				currentVersionStr := match[2]
+				currentVersion, err := version.NewVersion(currentVersionStr)
+				if err != nil {
+					continue
+				}
+
+				if highestVersion == nil || currentVersion.GreaterThan(highestVersion) {
+					highestVersion = currentVersion
+					versionStr = currentVersionStr
+				}
+			}
+		}
+
+		if versionStr != "" {
+			return versionStr, nil
+		}
+
+		// If we couldn't parse any versions but have matches, return the first one
+		if len(allMatches[0]) >= 3 {
+			return allMatches[0][2], nil
+		}
+	}
+
+	return "", fmt.Errorf("failed to find the version of the plugin sdk")
 }

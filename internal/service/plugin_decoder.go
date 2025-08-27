@@ -20,21 +20,21 @@ import (
 func UploadPluginPkg(
 	config *app.Config,
 	c *gin.Context,
-	tenant_id string,
-	dify_pkg_file multipart.File,
-	verify_signature bool,
+	tenantId string,
+	difyPkgFile multipart.File,
+	verifySignature bool,
 ) *entities.Response {
-	pluginFile, err := io.ReadAll(dify_pkg_file)
+	pluginFile, err := io.ReadAll(difyPkgFile)
 	if err != nil {
 		return exception.InternalServerError(err).ToResponse()
 	}
 
-	decoder, err := decoder.NewZipPluginDecoderWithSizeLimit(pluginFile, config.MaxPluginPackageSize)
+	decoderInstance, err := decoder.NewZipPluginDecoderWithSizeLimit(pluginFile, config.MaxPluginPackageSize)
 	if err != nil {
 		return exception.BadRequestError(err).ToResponse()
 	}
 
-	pluginUniqueIdentifier, err := decoder.UniqueIdentity()
+	pluginUniqueIdentifier, err := decoderInstance.UniqueIdentity()
 	if err != nil {
 		return exception.BadRequestError(err).ToResponse()
 	}
@@ -45,12 +45,15 @@ func UploadPluginPkg(
 	}
 
 	manager := plugin_manager.Manager()
-	declaration, err := manager.SavePackage(pluginUniqueIdentifier, pluginFile)
+	declaration, err := manager.SavePackage(pluginUniqueIdentifier, pluginFile, &decoder.ThirdPartySignatureVerificationConfig{
+		Enabled:        config.ThirdPartySignatureVerificationEnabled,
+		PublicKeyPaths: config.ThirdPartySignatureVerificationPublicKeys,
+	})
 	if err != nil {
 		return exception.BadRequestError(errors.Join(err, errors.New("failed to save package"))).ToResponse()
 	}
 
-	if config.ForceVerifyingSignature != nil && *config.ForceVerifyingSignature || verify_signature {
+	if config.ForceVerifyingSignature != nil && *config.ForceVerifyingSignature || verifySignature {
 		if !declaration.Verified {
 			return exception.BadRequestError(errors.Join(err, errors.New(
 				"plugin verification has been enabled, and the plugin you want to install has a bad signature",
@@ -58,9 +61,15 @@ func UploadPluginPkg(
 		}
 	}
 
+	verification, _ := decoderInstance.Verification()
+	if verification == nil && decoderInstance.Verified() {
+		verification = decoder.DefaultVerification()
+	}
+
 	return entities.NewSuccessResponse(map[string]any{
 		"unique_identifier": pluginUniqueIdentifier,
 		"manifest":          declaration,
+		"verification":      verification,
 	})
 }
 
@@ -123,17 +132,20 @@ func UploadPluginBundle(
 					return exception.InternalServerError(errors.Join(errors.New("failed to fetch package from bundle"), err)).ToResponse()
 				} else {
 					// decode and save
-					decoder, err := decoder.NewZipPluginDecoder(asset)
+					decoderInstance, err := decoder.NewZipPluginDecoder(asset)
 					if err != nil {
 						return exception.BadRequestError(errors.Join(errors.New("failed to create package decoder"), err)).ToResponse()
 					}
 
-					pluginUniqueIdentifier, err := decoder.UniqueIdentity()
+					pluginUniqueIdentifier, err := decoderInstance.UniqueIdentity()
 					if err != nil {
 						return exception.BadRequestError(errors.Join(errors.New("failed to get package unique identifier"), err)).ToResponse()
 					}
 
-					declaration, err := manager.SavePackage(pluginUniqueIdentifier, asset)
+					declaration, err := manager.SavePackage(pluginUniqueIdentifier, asset, &decoder.ThirdPartySignatureVerificationConfig{
+						Enabled:        config.ThirdPartySignatureVerificationEnabled,
+						PublicKeyPaths: config.ThirdPartySignatureVerificationPublicKeys,
+					})
 					if err != nil {
 						return exception.InternalServerError(errors.Join(errors.New("failed to save package"), err)).ToResponse()
 					}

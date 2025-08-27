@@ -1,7 +1,10 @@
 package install_service
 
 import (
+	gostrings "strings"
 	"time"
+
+	"github.com/langgenius/dify-plugin-daemon/internal/utils/cache"
 
 	"github.com/langgenius/dify-plugin-daemon/internal/db"
 	"github.com/langgenius/dify-plugin-daemon/internal/types/models"
@@ -134,6 +137,14 @@ func GetEndpoint(
 
 // uninstalls a plugin from db
 func UninstallEndpoint(endpoint *models.Endpoint) error {
+	cacheKey := gostrings.Join(
+		[]string{
+			"hook_id",
+			endpoint.HookID,
+		},
+		":",
+	)
+	_, _ = cache.AutoDelete[models.Endpoint](cacheKey)
 	return db.WithTransaction(func(tx *gorm.DB) error {
 		if err := db.Delete(endpoint, tx); err != nil {
 			return err
@@ -201,6 +212,16 @@ func DisabledEndpoint(endpoint_id string, tenant_id string) error {
 		if !endpoint.Enabled {
 			return nil
 		}
+
+		endpointCacheKey := gostrings.Join(
+			[]string{
+				"hook_id",
+				endpoint.HookID,
+			},
+			":",
+		)
+
+		_, _ = cache.AutoDelete[models.Endpoint](endpointCacheKey)
 
 		endpoint.Enabled = false
 		if err := db.Update(endpoint, tx); err != nil {

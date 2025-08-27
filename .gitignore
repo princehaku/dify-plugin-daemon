@@ -13,3 +13,5 @@ subprocesses
 working
 cwd/
 bin/
+.venv/
+integration_test_cwd/

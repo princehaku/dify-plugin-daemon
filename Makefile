@@ -21,9 +21,6 @@ build-all: build-plugin
 # Push all images
 push-all: push-plugin
 
-build-push-api: build-api push-api
-build-push-web: build-web push-web
-
 # Build and push all images
 build-push-all: build-all push-all
 	@echo "All Docker images have been built and pushed."

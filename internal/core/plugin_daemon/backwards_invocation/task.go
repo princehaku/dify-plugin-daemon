@@ -148,6 +148,18 @@ var (
 			},
 			"error": "permission denied, you need to enable storage access in plugin manifest",
 		},
+		dify_invocation.INVOKE_TYPE_FETCH_APP: {
+			"func": func(declaration *plugin_entities.PluginDeclaration) bool {
+				return declaration.Resource.Permission.AllowInvokeApp()
+			},
+			"error": "permission denied, you need to enable app access in plugin manifest",
+		},
+		dify_invocation.INVOKE_TYPE_LLM_STRUCTURED_OUTPUT: {
+			"func": func(declaration *plugin_entities.PluginDeclaration) bool {
+				return declaration.Resource.Permission.AllowInvokeLLM()
+			},
+			"error": "permission denied, you need to enable llm access in plugin manifest",
+		},
 	}
 )
 
@@ -241,6 +253,12 @@ var (
 		dify_invocation.INVOKE_TYPE_UPLOAD_FILE: func(handle *BackwardsInvocation) {
 			genericDispatchTask(handle, executeDifyInvocationUploadFileTask)
 		},
+		dify_invocation.INVOKE_TYPE_FETCH_APP: func(handle *BackwardsInvocation) {
+			genericDispatchTask(handle, executeDifyInvocationFetchAppTask)
+		},
+		dify_invocation.INVOKE_TYPE_LLM_STRUCTURED_OUTPUT: func(handle *BackwardsInvocation) {
+			genericDispatchTask(handle, executeDifyInvocationLLMStructuredOutputTask)
+		},
 	}
 )
 
@@ -324,6 +342,26 @@ func executeDifyInvocationLLMTask(
 			return
 		}
 
+		handle.WriteResponse("stream", value)
+	}
+}
+
+func executeDifyInvocationLLMStructuredOutputTask(
+	handle *BackwardsInvocation,
+	request *dify_invocation.InvokeLLMWithStructuredOutputRequest,
+) {
+	response, err := handle.backwardsInvocation.InvokeLLMWithStructuredOutput(request)
+	if err != nil {
+		handle.WriteError(fmt.Errorf("invoke llm with structured output model failed: %s", err.Error()))
+		return
+	}
+
+	for response.Next() {
+		value, err := response.Read()
+		if err != nil {
+			handle.WriteError(fmt.Errorf("read llm with structured output model failed: %s", err.Error()))
+			return
+		}
 		handle.WriteResponse("stream", value)
 	}
 }
@@ -531,13 +569,27 @@ func executeDifyInvocationStorageTask(
 			"data": "ok",
 		})
 	} else if request.Opt == dify_invocation.STORAGE_OPT_DEL {
-		if err := persistence.Delete(tenantId, pluginId.PluginID(), request.Key); err != nil {
+		deletedNum, err := persistence.Delete(tenantId, pluginId.PluginID(), request.Key)
+		if err != nil {
 			handle.WriteError(fmt.Errorf("delete data failed: %s", err.Error()))
 			return
 		}
 
 		handle.WriteResponse("struct", map[string]any{
-			"data": "ok",
+			"data":        "ok",
+			"deleted_num": deletedNum,
+		})
+	} else if request.Opt == dify_invocation.STORAGE_OPT_EXIST {
+		existNum, err := persistence.Exist(tenantId, pluginId.PluginID(), request.Key)
+		if err != nil {
+			handle.WriteError(fmt.Errorf("exist data failed: %s", err.Error()))
+			return
+		}
+		isExist := existNum > 0
+
+		handle.WriteResponse("struct", map[string]any{
+			"data":      isExist,
+			"exist_num": existNum,
 		})
 	}
 }
@@ -562,6 +614,19 @@ func executeDifyInvocationUploadFileTask(
 	response, err := handle.backwardsInvocation.UploadFile(request)
 	if err != nil {
 		handle.WriteError(fmt.Errorf("upload file failed: %s", err.Error()))
+		return
+	}
+
+	handle.WriteResponse("struct", response)
+}
+
+func executeDifyInvocationFetchAppTask(
+	handle *BackwardsInvocation,
+	request *dify_invocation.FetchAppRequest,
+) {
+	response, err := handle.backwardsInvocation.FetchApp(request)
+	if err != nil {
+		handle.WriteError(fmt.Errorf("fetch app failed: %s", err.Error()))
 		return
 	}
 

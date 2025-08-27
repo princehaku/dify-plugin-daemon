@@ -20,6 +20,8 @@ const (
 	CONFIG_TYPE_MODEL_SELECTOR ConfigType = MODEL_SELECTOR
 	CONFIG_TYPE_APP_SELECTOR   ConfigType = APP_SELECTOR
 	// CONFIG_TYPE_TOOL_SELECTOR  ConfigType = TOOL_SELECTOR
+	CONFIG_TYPE_TOOLS_SELECTOR ConfigType = TOOLS_SELECTOR
+	CONFIG_TYPE_ANY            ConfigType = ANY
 )
 
 type ModelConfigScope string
@@ -55,6 +57,18 @@ const (
 	TOOL_SELECTOR_SCOPE_WORKFLOW ToolSelectorScope = "workflow"
 )
 
+type AnyScope string
+
+const (
+	ANY_SCOPE_STRING       AnyScope = "string"
+	ANY_SCOPE_NUMBER       AnyScope = "number"
+	ANY_SCOPE_OBJECT       AnyScope = "object"
+	ANY_SCOPE_ARRAY_NUMBER AnyScope = "array[number]"
+	ANY_SCOPE_ARRAY_STRING AnyScope = "array[string]"
+	ANY_SCOPE_ARRAY_OBJECT AnyScope = "array[object]"
+	ANY_SCOPE_ARRAY_FILES  AnyScope = "array[file]"
+)
+
 func isCredentialType(fl validator.FieldLevel) bool {
 	value := fl.Field().String()
 	switch value {
@@ -63,7 +77,8 @@ func isCredentialType(fl validator.FieldLevel) bool {
 		string(CONFIG_TYPE_SELECT),
 		string(CONFIG_TYPE_BOOLEAN),
 		string(CONFIG_TYPE_APP_SELECTOR),
-		string(CONFIG_TYPE_MODEL_SELECTOR):
+		string(CONFIG_TYPE_MODEL_SELECTOR),
+		string(CONFIG_TYPE_TOOLS_SELECTOR):
 		return true
 	}
 	return false
@@ -132,6 +147,28 @@ func isToolSelectorScope(fl validator.FieldLevel) bool {
 	}
 	return false
 }
+
+func isVarSelectorScope(fl validator.FieldLevel) bool {
+	value := fl.Field().String()
+	// split by and symbol
+	scopes := strings.Split(value, "&")
+	for _, scope := range scopes {
+		// trim space
+		scope = strings.TrimSpace(scope)
+		switch scope {
+		case string(ANY_SCOPE_STRING),
+			string(ANY_SCOPE_NUMBER),
+			string(ANY_SCOPE_OBJECT),
+			string(ANY_SCOPE_ARRAY_NUMBER),
+			string(ANY_SCOPE_ARRAY_STRING),
+			string(ANY_SCOPE_ARRAY_OBJECT),
+			string(ANY_SCOPE_ARRAY_FILES):
+			return true
+		}
+	}
+	return false
+}
+
 func isScope(fl validator.FieldLevel) bool {
 	// get parent and check if it's a provider config
 	parent := fl.Parent().Interface()
@@ -141,6 +178,8 @@ func isScope(fl validator.FieldLevel) bool {
 			return isAppSelectorScope(fl)
 		} else if providerConfig.Type == CONFIG_TYPE_MODEL_SELECTOR {
 			return isModelConfigScope(fl)
+		} else if providerConfig.Type == CONFIG_TYPE_ANY {
+			return isVarSelectorScope(fl)
 		} else {
 			return false
 		}
@@ -154,6 +193,8 @@ func isScope(fl validator.FieldLevel) bool {
 			return isAppSelectorScope(fl)
 		} else if toolParameter.Type == TOOL_PARAMETER_TYPE_MODEL_SELECTOR {
 			return isModelConfigScope(fl)
+		} else if toolParameter.Type == TOOL_PARAMETER_TYPE_ANY {
+			return isVarSelectorScope(fl)
 		} else {
 			return false
 		}
@@ -168,6 +209,8 @@ func isScope(fl validator.FieldLevel) bool {
 			return isAppSelectorScope(fl)
 		} else if agentStrategyParameter.Type == AGENT_STRATEGY_PARAMETER_TYPE_MODEL_SELECTOR {
 			return isModelConfigScope(fl)
+		} else if agentStrategyParameter.Type == AGENT_STRATEGY_PARAMETER_TYPE_ANY {
+			return isVarSelectorScope(fl)
 		} else {
 			return false
 		}

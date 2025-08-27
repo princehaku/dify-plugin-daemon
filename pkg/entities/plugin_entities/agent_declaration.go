@@ -30,6 +30,7 @@ const (
 	AGENT_STRATEGY_PARAMETER_TYPE_APP_SELECTOR   AgentStrategyParameterType = APP_SELECTOR
 	AGENT_STRATEGY_PARAMETER_TYPE_MODEL_SELECTOR AgentStrategyParameterType = MODEL_SELECTOR
 	AGENT_STRATEGY_PARAMETER_TYPE_TOOLS_SELECTOR AgentStrategyParameterType = TOOLS_SELECTOR
+	AGENT_STRATEGY_PARAMETER_TYPE_ANY            AgentStrategyParameterType = ANY
 )
 
 func isAgentStrategyParameterType(fl validator.FieldLevel) bool {
@@ -45,7 +46,8 @@ func isAgentStrategyParameterType(fl validator.FieldLevel) bool {
 		// string(TOOL_PARAMETER_TYPE_TOOL_SELECTOR),
 		string(AGENT_STRATEGY_PARAMETER_TYPE_APP_SELECTOR),
 		string(AGENT_STRATEGY_PARAMETER_TYPE_MODEL_SELECTOR),
-		string(AGENT_STRATEGY_PARAMETER_TYPE_TOOLS_SELECTOR):
+		string(AGENT_STRATEGY_PARAMETER_TYPE_TOOLS_SELECTOR),
+		string(AGENT_STRATEGY_PARAMETER_TYPE_ANY):
 		return true
 	}
 	return false
@@ -58,6 +60,7 @@ func init() {
 type AgentStrategyParameter struct {
 	Name         string                     `json:"name" yaml:"name" validate:"required,gt=0,lt=1024"`
 	Label        I18nObject                 `json:"label" yaml:"label" validate:"required"`
+	Help         I18nObject                 `json:"help" yaml:"help" validate:"omitempty"`
 	Type         AgentStrategyParameterType `json:"type" yaml:"type" validate:"required,agent_strategy_parameter_type"`
 	AutoGenerate *ParameterAutoGenerate     `json:"auto_generate" yaml:"auto_generate" validate:"omitempty"`
 	Template     *ParameterTemplate         `json:"template" yaml:"template" validate:"omitempty"`
@@ -67,7 +70,7 @@ type AgentStrategyParameter struct {
 	Min          *float64                   `json:"min" yaml:"min" validate:"omitempty"`
 	Max          *float64                   `json:"max" yaml:"max" validate:"omitempty"`
 	Precision    *int                       `json:"precision" yaml:"precision" validate:"omitempty"`
-	Options      []ToolParameterOption      `json:"options" yaml:"options" validate:"omitempty,dive"`
+	Options      []ParameterOption          `json:"options" yaml:"options" validate:"omitempty,dive"`
 }
 
 type AgentStrategyOutputSchema map[string]any
@@ -77,6 +80,7 @@ type AgentStrategyDeclaration struct {
 	Description  I18nObject                `json:"description" yaml:"description" validate:"required"`
 	Parameters   []AgentStrategyParameter  `json:"parameters" yaml:"parameters" validate:"omitempty,dive"`
 	OutputSchema AgentStrategyOutputSchema `json:"output_schema" yaml:"output_schema" validate:"omitempty,json_schema"`
+	Features     []string                  `json:"features" yaml:"features" validate:"omitempty,dive,lt=256"`
 }
 
 type AgentStrategyProviderDeclaration struct {
@@ -91,6 +95,13 @@ func (a *AgentStrategyProviderDeclaration) MarshalJSON() ([]byte, error) {
 	if p.Strategies == nil {
 		p.Strategies = []AgentStrategyDeclaration{}
 	}
+
+	for i := range p.Strategies {
+		if p.Strategies[i].Features == nil {
+			p.Strategies[i].Features = []string{}
+		}
+	}
+
 	return json.Marshal(p)
 }
 
