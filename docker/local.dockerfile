@@ -42,6 +42,7 @@ ENV TIKTOKEN_CACHE_DIR=/app/.tiktoken
 # set pip mirror
 RUN pip config set global.index-url https://mirrors.aliyun.com/pypi/simple/ && pip config set install.trusted-host mirrors.aliyun.com
 
+
 # Install dify_plugin to speedup the environment setup, test uv and preload tiktoken
 RUN mv /usr/lib/python3.12/EXTERNALLY-MANAGED /usr/lib/python3.12/EXTERNALLY-MANAGED.bk \
     && python3 -m pip install uv \

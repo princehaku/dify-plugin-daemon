@@ -1,7 +1,7 @@
 # Variables
 DOCKER_REGISTRY=registry.cn-hangzhou.aliyuncs.com/haku-images
 PLUGIN_IMAGE=$(DOCKER_REGISTRY)/dify-plugin-daemon
-VERSION=0.2.0-local
+VERSION=0.4.0-local
 
 # Build Docker images
 build-plugin:

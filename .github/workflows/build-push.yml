@@ -44,7 +44,7 @@ jobs:
   build:
     needs: matrix_prepare
     runs-on: ${{ matrix.platform == 'linux/arm64' && 'arm64_runner' || 'ubuntu-latest' }}
-    if: github.repository == 'langgenius/dify-plugin-daemon'
+    if: github.repository == 'princehaku/dify-plugin-daemon'
     strategy:
       matrix: ${{ fromJson(needs.matrix_prepare.outputs.matrix) }}
 
